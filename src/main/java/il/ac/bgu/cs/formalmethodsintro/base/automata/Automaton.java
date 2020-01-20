@@ -41,6 +41,8 @@ public class Automaton<State, Sigma> extends MultiColorAutomaton<State, Sigma> {
     public Set<State> getAcceptingStates() {
         return super.getAcceptingStates(0);
     }
+    
+    
 
     public boolean isEquivalentTo(Automaton<?, Sigma> other) throws EvaluationException, Exception {
         AutomatonIO.write((Automaton<?, Sigma>) other, "other.gff");
