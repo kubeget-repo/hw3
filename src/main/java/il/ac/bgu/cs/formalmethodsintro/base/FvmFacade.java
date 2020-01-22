@@ -11,7 +11,13 @@ import il.ac.bgu.cs.formalmethodsintro.base.automata.MultiColorAutomaton;
 import il.ac.bgu.cs.formalmethodsintro.base.channelsystem.ChannelSystem;
 import il.ac.bgu.cs.formalmethodsintro.base.circuits.Circuit;
 import il.ac.bgu.cs.formalmethodsintro.base.exceptions.StateNotFoundException;
+import il.ac.bgu.cs.formalmethodsintro.base.ltl.AP;
+import il.ac.bgu.cs.formalmethodsintro.base.ltl.And;
 import il.ac.bgu.cs.formalmethodsintro.base.ltl.LTL;
+import il.ac.bgu.cs.formalmethodsintro.base.ltl.Next;
+import il.ac.bgu.cs.formalmethodsintro.base.ltl.Not;
+import il.ac.bgu.cs.formalmethodsintro.base.ltl.TRUE;
+import il.ac.bgu.cs.formalmethodsintro.base.ltl.Until;
 import il.ac.bgu.cs.formalmethodsintro.base.programgraph.ActionDef;
 import il.ac.bgu.cs.formalmethodsintro.base.programgraph.ConditionDef;
 import il.ac.bgu.cs.formalmethodsintro.base.programgraph.ParserBasedActDef;
@@ -20,10 +26,12 @@ import il.ac.bgu.cs.formalmethodsintro.base.programgraph.ProgramGraph;
 import il.ac.bgu.cs.formalmethodsintro.base.transitionsystem.AlternatingSequence;
 import il.ac.bgu.cs.formalmethodsintro.base.transitionsystem.TransitionSystem;
 import il.ac.bgu.cs.formalmethodsintro.base.util.Pair;
+import il.ac.bgu.cs.formalmethodsintro.base.util.Util;
 import il.ac.bgu.cs.formalmethodsintro.base.verification.VerificationResult;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * Interface for the entry point class to the HW in this class. Our
@@ -491,7 +499,7 @@ public class FvmFacade {
 		Map<Integer, MultiColorAutomaton<?, L>> a = duplicate(mulAut);
 
 		Automaton<? super Object, L> result = new Automaton<>();
-        
+
 		for (var color : mulAut.getColors()) {
 			MultiColorAutomaton<?, L> nb = a.get(color);
 
@@ -546,7 +554,174 @@ public class FvmFacade {
 	 * @param ltl The LTL formula represented as a parse-tree.
 	 * @return An automaton A such that L_\omega(A)=Words(ltl)
 	 */
+
+	public <L> void Subs(LTL<L> ltl, Set<LTL<L>> st) {
+
+		if (st.contains(ltl) == false)
+			st.add(ltl);
+		if ((ltl instanceof Not) == false)
+			st.add(new Not<L>(ltl));
+
+		if (ltl instanceof AP) {
+			return;
+		}
+
+		if (ltl instanceof Until) {
+			Subs(((Until<L>) ltl).getLeft(), st);
+			Subs(((Until<L>) ltl).getRight(), st);
+			return;
+		}
+
+		if (ltl instanceof Not) {
+			Subs(((Not<L>) ltl).getInner(), st);
+			return;
+		}
+
+		if (ltl instanceof And) {
+			Subs(((And<L>) ltl).getLeft(), st);
+			Subs(((And<L>) ltl).getRight(), st);
+			return;
+		}
+
+		if (ltl instanceof Next) {
+			Subs(((Next<L>) ltl).getInner(), st);
+			return;
+		}
+		if (ltl instanceof TRUE) {
+			return;
+		}
+
+	}
+
+	public <L> boolean isConsistent(Set<LTL<L>> sub, int length) {
+
+		if (sub.size() * 2 != length)
+			return false;
+
+		// maximum
+		for (var e : sub) {
+			if (sub.contains(LTL.not(e)))
+				return false;
+		}
+
+		// local Consistent
+		for (var e : sub) {
+			if (e instanceof Until) {
+				var y2 = ((Until<L>) e).getRight();
+				var y1 = ((Until<L>) e).getLeft();
+				if (sub.contains(y2) == false && sub.contains(y1) == false)
+					return false;
+			} else if (e instanceof Not)
+				if (((Not<L>) e).getInner() instanceof Until) {
+					var e_tag = ((Not<L>) e).getInner();
+
+					var y2 = ((Until<L>) e_tag).getRight();
+
+					if (sub.contains(y2))
+						return false;
+				}
+		}
+
+		// Logical Consistent
+
+		return true;
+	}
+
+	public <L> Pair<Set<Set<LTL<L>>>, Set<AP<L>>> States(LTL<L> ltl) {
+
+		var subs = new HashSet<LTL<L>>();
+		Subs(ltl, subs);
+
+		Set<AP<L>> AP = new HashSet<AP<L>>();
+		for (var p : subs) {
+			if (p instanceof AP)
+				if (AP.contains(p) == false)
+					AP.add((AP<L>) p);
+		}
+
+		Set<Set<LTL<L>>> pow_subs = Util.powerSet(subs);
+
+		Set<Set<LTL<L>>> states = new HashSet<Set<LTL<L>>>();
+		for (var sub : pow_subs) {
+			if (isConsistent(sub, subs.size()))
+				states.add(sub);
+		}
+
+		return new Pair<>(states, AP);
+
+	}
+
+	public <L> Set<L> getAP(Set<LTL<L>> state, Set<AP<L>> AP) {
+		Set<L> c = new HashSet<>();
+		for (var e : AP) {
+			if (state.contains(e))
+				c.add(e.getName());
+
+		}
+		return c;
+	}
+
+	public <L> void LTL_addTransitions(Pair<Set<Set<LTL<L>>>, Set<AP<L>>> states_AP,
+			MultiColorAutomaton<Set<LTL<L>>, L> gnba, LTL<L> ltl) {
+
+		var states = states_AP.first;
+		var AP = states_AP.second;
+
+		MultiColorAutomaton<Set<LTL<L>>, L> temp_gnba = new MultiColorAutomaton<>();
+
+		// Add ALL Transations
+		for (var b : states)
+			for (var b_tag : states)
+				temp_gnba.addTransition(b, getAP(b, AP), b_tag);
+
+		// Until - illegal transations
+
+		for (var trans : temp_gnba.getTransitions().entrySet()) {
+			var src = trans.getKey();
+			//init states
+			if(src.contains(ltl))
+				gnba.setInitial(src);
+			
+			
+			for (var ap : trans.getValue().entrySet())
+				for (var des : ap.getValue()) {
+					boolean isOK = true;
+					for (var e : src) {
+						// Until
+						if (e instanceof Until) {
+							var y2 = ((Until<L>) e).getRight();
+							if (src.contains(y2) == false && des.contains(e) == false)
+								isOK = false;
+						}
+						// not Until
+						if (e instanceof Not)
+							if (((Not<L>) e).getInner() instanceof Until) {
+								var until = ((Until<L>) (((Not<L>) e).getInner()));
+								var y1 = until.getLeft();
+								if (src.contains(y1) && des.contains(until))
+									isOK = false;
+							}
+					}
+
+					if (isOK)
+						gnba.addTransition(src, ap.getKey(), des);
+				}
+
+		}
+
+	}
+
 	public <L> Automaton<?, L> LTL2NBA(LTL<L> ltl) {
-		throw new java.lang.UnsupportedOperationException();
+		MultiColorAutomaton<Set<LTL<L>>, L> gnba = new MultiColorAutomaton<>();
+
+		Pair<Set<Set<LTL<L>>>, Set<AP<L>>> states_AP = States(ltl);
+
+		LTL_addTransitions(states_AP, gnba, ltl);
+
+		Util.printColoredAutomatonTransitions(gnba);
+		
+		
+		
+		return null;
 	}
 }
