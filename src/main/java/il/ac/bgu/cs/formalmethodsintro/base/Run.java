@@ -63,19 +63,20 @@ public class Run {
 		var ltl_3 = LTL.until(a, LTL.until(b, LTL.not(a)));
 		var ltl_4 = LTL.next(a);
 		var ltl_5 =  LTL.and(LTL.not(p),LTL.next(p));
+		/******quiz 4 ********* !(p U q) and (q U s) ***/
 		var ltl_6 = LTL.and(LTL.not(LTL.until(p, q)),LTL.until(q, s));
-		
+		/******quiz 4 ********* p U (q U s)  ***/
 		var ltl_7 = LTL.until(p, LTL.until(q, s));
 		
-		Automaton<?, String> nba = app.LTL2NBA(ltl_5);
+		Automaton<?, String> nba = app.LTL2NBA(ltl_6);
 		
 	
-		System.out.println("\n\n/***** Transitions *****/\n");
-		System.out.println(nba.getTransitions());
-		System.out.println("\n\n/***** InitialStates *****/\n");
-		System.out.println(nba.getInitialStates());
-		System.out.println("\n\n/***** AcceptingStates *****/\n");
-		System.out.println(nba.getAcceptingStates());
+//		System.out.println("\n\n/***** Transitions *****/\n");
+//		System.out.println(nba.getTransitions());
+//		System.out.println("\n\n/***** InitialStates *****/\n");
+//		System.out.println(nba.getInitialStates());
+//		System.out.println("\n\n/***** AcceptingStates *****/\n");
+//		System.out.println(nba.getAcceptingStates());
 		
 	}
 	static MultiColorAutomaton<String, String> getMCAut() {
