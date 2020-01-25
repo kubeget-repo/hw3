@@ -496,6 +496,28 @@ public class FvmFacade {
 	}
 
 	public <L> Automaton<?, L> GNBA2NBA(MultiColorAutomaton<?, L> mulAut) {
+		
+		if(mulAut.getColors().size() == 0)
+		{
+			Automaton<? super Object, L> npa = new Automaton<>();
+			
+			for (var entry : mulAut.getTransitions().entrySet()) {
+				var source =  entry.getKey(); 
+				npa.setAccepting(new Pair<>(source,0));
+				for (var sym : entry.getValue().entrySet()) {
+					for (var destination : sym.getValue()) {
+						npa.addTransition(new Pair<>(source,0), sym.getKey(),new Pair(destination,0));
+					}
+				}
+			}
+			
+			
+			return npa;
+		
+		}
+		
+		
+		
 		Map<Integer, MultiColorAutomaton<?, L>> a = duplicate(mulAut);
 
 		Automaton<? super Object, L> result = new Automaton<>();
@@ -603,6 +625,7 @@ public class FvmFacade {
 			if (sub.contains(LTL.not(e)))
 				return false;
 		}
+		
 
 		// local Consistent
 		for (var e : sub) {
@@ -623,6 +646,30 @@ public class FvmFacade {
 		}
 
 		// Logical Consistent
+		for (var e : sub) {
+			if(e instanceof And)
+			{
+				var y1 = ((And<L>) e).getLeft();
+				var y2 = ((And<L>) e).getRight();
+				if((sub.contains(y1) && sub.contains(y2)) == false)
+					return false;
+			}
+			
+			if(e instanceof Not)
+				if(((Not<L>) e).getInner() instanceof And)
+				{
+					var n =((And<L>)((Not<L>) e).getInner());
+					var y1 = n.getLeft();
+					var y2 = n.getRight();
+					if((sub.contains(y1) && sub.contains(y2)))
+						return false;
+				}
+			
+			if(sub.contains(LTL.not(e)))
+				return false;
+					
+			
+		}
 
 		return true;
 	}
@@ -631,7 +678,9 @@ public class FvmFacade {
 
 		var subs = new HashSet<LTL<L>>();
 		Subs(ltl, subs);
-
+		
+		
+		
 		Set<AP<L>> AP = new HashSet<AP<L>>();
 		for (var p : subs) {
 			if (p instanceof AP)
@@ -661,28 +710,35 @@ public class FvmFacade {
 		return c;
 	}
 
-	public <L> void LTL_addTransitions(Pair<Set<Set<LTL<L>>>, Set<AP<L>>> states_AP,
+	public <L> void LTL_GNBA_BUILD(Pair<Set<Set<LTL<L>>>, Set<AP<L>>> states_AP,
 			MultiColorAutomaton<Set<LTL<L>>, L> gnba, LTL<L> ltl) {
 
 		var states = states_AP.first;
+		
+		
+		for(var s : states) {
+			System.out.println(s);
+		}
+		System.out.println("\n\n\n\n");
 		var AP = states_AP.second;
 
 		MultiColorAutomaton<Set<LTL<L>>, L> temp_gnba = new MultiColorAutomaton<>();
 
-		// Add ALL Transations
-		for (var b : states)
+		// Add ALL Transations && Set All States As Acceptance 
+		for (var b : states) {
 			for (var b_tag : states)
 				temp_gnba.addTransition(b, getAP(b, AP), b_tag);
-
-		// Until - illegal transations
+		}
+int t=0;
+		// Remove - illegal transations
 
 		for (var trans : temp_gnba.getTransitions().entrySet()) {
 			var src = trans.getKey();
-			//init states
-			if(src.contains(ltl))
+			// initialization
+			if (src.contains(ltl))
 				gnba.setInitial(src);
-			
-			
+
+			// Transitions
 			for (var ap : trans.getValue().entrySet())
 				for (var des : ap.getValue()) {
 					boolean isOK = true;
@@ -701,27 +757,67 @@ public class FvmFacade {
 								if (src.contains(y1) && des.contains(until))
 									isOK = false;
 							}
+
+						// Oalpha Next LTL - 1
+						if (e instanceof Next)
+							if (des.contains(((Next<L>) e).getInner()) == false)
+								isOK = false;
+
+						// Oalpha Next LTL - 2
+						if (e instanceof Not)
+							if (((Not<L>) e).getInner() instanceof Next)
+								if (des.contains(((Next<L>) ((Not<L>) e).getInner()).getInner()))
+									isOK = false;
+
 					}
 
-					if (isOK)
+					if (isOK) {
 						gnba.addTransition(src, ap.getKey(), des);
+						t++;
+					}
 				}
-
 		}
+		System.out.println(t);
+		
+		//Acceptance states
+		int colors=0;
+		var subs = new HashSet<LTL<L>>();
+		Subs(ltl, subs);
+		var untiles =  new HashSet<Pair<Until<L>,Integer>>();
+		for(var s : subs)
+			if(s instanceof Until)
+				untiles.add(new Pair<>((Until<L>)s,colors++));
+		
+	
+		for(var s : states) {
+
+			for(var un : untiles)
+				if(s.contains(LTL.not(un.first)))
+					gnba.setAccepting(s, un.second);
+				else
+					if(s.contains(un.first.getRight()))
+						gnba.setAccepting(s, un.second);
+		}
+			
 
 	}
 
 	public <L> Automaton<?, L> LTL2NBA(LTL<L> ltl) {
 		MultiColorAutomaton<Set<LTL<L>>, L> gnba = new MultiColorAutomaton<>();
+		
+		Pair<Set<Set<LTL<L>>>, Set<AP<L>>> States_AP = States(ltl);
 
-		Pair<Set<Set<LTL<L>>>, Set<AP<L>>> states_AP = States(ltl);
-
-		LTL_addTransitions(states_AP, gnba, ltl);
-
+		LTL_GNBA_BUILD(States_AP, gnba, ltl);
+		
 		Util.printColoredAutomatonTransitions(gnba);
+	
+	
+		System.out.println("\n************\n");
+		for(var s : gnba.getAcceptingStates(1)) {
+			System.out.println(s);
+		}
+		System.out.println("\n************\n");
 		
-		
-		
-		return null;
+		return GNBA2NBA(gnba);
 	}
 }

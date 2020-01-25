@@ -1,5 +1,7 @@
 package il.ac.bgu.cs.formalmethodsintro.base;
 
+import static il.ac.bgu.cs.formalmethodsintro.base.util.CollectionHelper.set;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
@@ -14,6 +16,7 @@ import il.ac.bgu.cs.formalmethodsintro.base.ltl.Until;
 import il.ac.bgu.cs.formalmethodsintro.base.transitionsystem.TSTransition;
 import il.ac.bgu.cs.formalmethodsintro.base.transitionsystem.TransitionSystem;
 import il.ac.bgu.cs.formalmethodsintro.base.util.GraphvizPainter;
+import il.ac.bgu.cs.formalmethodsintro.base.util.Util;
 
 public class Run {
 	static enum colors {
@@ -26,18 +29,45 @@ public class Run {
 
 	public static void main(String[] args) {
 		LTL_GNBA();
+		/*FvmFacade app = new FvmFacade();
+		var p = new AP<String>("p");
+		var q = new AP<String>("q");
+		var s = new AP<String>("s");
+		System.out.println(app.isConsistent(set(
+				LTL.not(p),
+				q,
+				LTL.not(s),
+				LTL.until(q, s),
+				LTL.until(p, LTL.until(q, s))
+								), 5*2));
+		System.out.print(set(
+				p,
+				q,
+				LTL.not(s),
+				LTL.not(LTL.until(q, s)),
+				LTL.until(p, LTL.until(q, s))));*/
+		
 	}
 
 	public static void LTL_GNBA() {
 		FvmFacade app = new FvmFacade();
 		var a = new AP<String>("a");
 		var b = new AP<String>("b");
+		var p = new AP<String>("p");
+		var q = new AP<String>("q");
+		var s = new AP<String>("s");
+		
 		var ltl = LTL.until(a, b) ;
 		
 		var ltl_2 = LTL.until(a, LTL.and(b, LTL.until(LTL.not(a), LTL.not(b))));
+		var ltl_3 = LTL.until(a, LTL.until(b, LTL.not(a)));
+		var ltl_4 = LTL.next(a);
+		var ltl_5 =  LTL.and(LTL.not(p),LTL.next(p));
+		var ltl_6 = LTL.and(LTL.not(LTL.until(p, q)),LTL.until(q, s));
 		
+		var ltl_7 = LTL.until(p, LTL.until(q, s));
 		
-		Automaton<?, String> nba = app.LTL2NBA(ltl);
+		Automaton<?, String> nba = app.LTL2NBA(ltl_5);
 		
 	
 		System.out.println("\n\n/***** Transitions *****/\n");
@@ -48,7 +78,25 @@ public class Run {
 		System.out.println(nba.getAcceptingStates());
 		
 	}
+	static MultiColorAutomaton<String, String> getMCAut() {
+		MultiColorAutomaton<String, String> aut = new MultiColorAutomaton<>();
 
+		aut.addTransition("s0", set("crit2"), "s2");
+		aut.addTransition("s0", set("crit1"), "s1");
+
+		// True transitions
+		for (Set<String> s : Util.powerSet(set("crit1", "crit2"))) {
+			aut.addTransition("s0", new HashSet<>(s), "s0");
+			aut.addTransition("s1", new HashSet<>(s), "s0");
+			aut.addTransition("s2", new HashSet<>(s), "s0");
+		}
+
+		aut.setInitial("s0");
+		aut.setAccepting("s1", 0);
+		aut.setAccepting("s2", 1);
+
+		return aut;
+	}
 	public static void GNBA_NBA() {
 		// TODO Auto-generated method stub
 		FvmFacade app = new FvmFacade();
