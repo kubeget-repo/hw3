@@ -1,7 +1,11 @@
 package il.ac.bgu.cs.formalmethodsintro.base;
 
+
+import static il.ac.bgu.cs.formalmethodsintro.base.Baraa_Tests.*;
+import static il.ac.bgu.cs.formalmethodsintro.base.util.CollectionHelper.product;
 import static il.ac.bgu.cs.formalmethodsintro.base.util.CollectionHelper.set;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 import il.ac.bgu.cs.formalmethodsintro.base.automata.MultiColorAutomaton;
@@ -15,6 +19,7 @@ import il.ac.bgu.cs.formalmethodsintro.base.transitionsystem.TransitionSystem;
 import il.ac.bgu.cs.formalmethodsintro.base.util.GraphvizPainter;
 import il.ac.bgu.cs.formalmethodsintro.base.util.Pair;
 import il.ac.bgu.cs.formalmethodsintro.base.util.Util;
+import il.ac.bgu.cs.formalmethodsintro.base.verification.VerificationResult;
 import org.svvrl.goal.gui.action.AutomatonConsistencyAction;
 
 public class Run {
@@ -26,117 +31,8 @@ public class Run {
 		s0, s1, s2, s3, s4, s5
 	}
 
-	public static Automaton<String, String> Baraa_get_aut() {
-		Automaton<String,String> aut = new Automaton();
-
-		String q0 = "q0";
-		String q1 = "q1";
-		String q2 = "q2";
-		String q3 = "q3";
-
-		List<Set<String>> all_sets = new ArrayList<>();
-		all_sets.add(new HashSet<>(Arrays.asList()));
-		all_sets.add(new HashSet<>(Arrays.asList("a")));
-		all_sets.add(new HashSet<>(Arrays.asList("b")));
-		all_sets.add(new HashSet<>(Arrays.asList("c")));
-		all_sets.add(new HashSet<>(Arrays.asList("a","b")));
-		all_sets.add(new HashSet<>(Arrays.asList("b", "c")));
-		all_sets.add(new HashSet<>(Arrays.asList("a", "c")));
-		all_sets.add(new HashSet<>(Arrays.asList("a", "b", "c")));
-
-		int[] q0_q0 = {0,1,3,5,6,7};
-		int[] q0_q1 = {2,4};
-		int[] q1_q1 = {2};
-		int[] q1_q0 = {0,3,5};
-		int[] q1_q2 = {1,4,6,7};
-		int[] q2_q0 = {3,5,6,7};
-		int[] q2_q2 = {0};
-		int[] q2_q3 = {1,2,4};
-
-		aut.addState(q0);
-		aut.addState(q1);
-		aut.addState(q2);
-		aut.addState(q3);
-
-		aut.setInitial(q0);
-		aut.setAccepting(q3);
-
-		for(int i = 0; i< q0_q0.length; i++)
-			aut.addTransition(q0,all_sets.get(q0_q0[i]),q0);
-
-		for(int i = 0; i< q0_q1.length; i++)
-			aut.addTransition(q0,all_sets.get(q0_q1[i]),q1);
-
-		for(int i = 0; i< q1_q1.length; i++)
-			aut.addTransition(q1,all_sets.get(q1_q1[i]),q1);
-
-		for(int i = 0; i< q1_q0.length; i++)
-			aut.addTransition(q1,all_sets.get(q1_q0[i]),q0);
-
-		for(int i = 0; i< q1_q2.length; i++)
-			aut.addTransition(q1,all_sets.get(q1_q2[i]),q2);
-
-		for(int i = 0; i< q2_q0.length; i++)
-			aut.addTransition(q2,all_sets.get(q2_q0[i]),q0);
-
-		for(int i = 0; i< q2_q2.length; i++)
-			aut.addTransition(q2,all_sets.get(q2_q2[i]),q2);
-
-		for(int i = 0; i< q2_q3.length; i++)
-			aut.addTransition(q2,all_sets.get(q2_q3[i]),q3);
 
 
-
-
-
-		return aut;
-
-	}
-	public static TransitionSystem<String,String,String> Baraa_get_TS(){
-		TransitionSystem<String,String,String> ts = new TransitionSystem<>();
-		String[] AP = {"a","b","c"};
-		String[] ACT = {"alpha","beta","gama"};
-
-
-		String alpha = "alpha";
-		String beta = "beta";
-		String gama = "gama";
-
-
-		String s0 = "s0";
-		String s1 = "s1";
-		String s2 = "s2";
-		String s3 = "s3";
-		String s4 = "s4";
-		String s5 = "s5";
-
-		ts.addInitialState(s0);
-		ts.addState(s1);
-		ts.addState(s2);
-		ts.addState(s3);
-		ts.addState(s4);
-		ts.addState(s5);
-		ts.addAllAtomicPropositions(AP);
-		ts.addAllActions(ACT);
-		ts.addToLabel(s0,AP[0]);  ts.addToLabel(s0,AP[1]);
-		ts.addToLabel(s1,AP[0]);  ts.addToLabel(s1,AP[1]);   ts.addToLabel(s1,AP[2]);
-		ts.addToLabel(s2,AP[1]);  ts.addToLabel(s2,AP[2]);
-		ts.addToLabel(s3,AP[0]);  ts.addToLabel(s3,AP[2]);
-		ts.addToLabel(s4,AP[0]);  ts.addToLabel(s4,AP[2]);
-		ts.addToLabel(s5,AP[0]);  ts.addToLabel(s5,AP[1]);
-
-
-		ts.addTransition(new TSTransition<>(s0,beta,s1));
-		ts.addTransition(new TSTransition<>(s0,alpha,s3));
-		ts.addTransition(new TSTransition<>(s1,alpha,s4));
-		ts.addTransition(new TSTransition<>(s2,gama,s1));
-		ts.addTransition(new TSTransition<>(s3,gama,s1));
-		ts.addTransition(new TSTransition<>(s4,gama,s1));
-		ts.addTransition(new TSTransition<>(s4,beta,s1));
-		ts.addTransition(new TSTransition<>(s5,beta,s1));
-		ts.addTransition(new TSTransition<>(s5,alpha,s2));
-		return ts;
-	}
 	public static void main(String[] args) {
 		//LTL_GNBA();
 		/*FvmFacade app = new FvmFacade();
@@ -157,15 +53,25 @@ public class Run {
 				LTL.not(LTL.until(q, s)),
 				LTL.until(p, LTL.until(q, s))));*/
 		FvmFacade app = new FvmFacade();
-		TransitionSystem<String,String,String> ts = Baraa_get_TS();
-		Automaton<String,String> aut = Baraa_get_aut();
-		TransitionSystem<Pair<String, String>, String, String> res =  app.product(ts,aut);
+		TransitionSystem<String,String,String> ts = Baraa_get_TS4_test();
+		Automaton<String,String> aut = Baraa_get_aut4();
 
-		System.out.println("AP : "  + res.getAtomicPropositions());
-		System.out.println("Act : " + res.getActions());
-		System.out.println("I : "   + res.getInitialStates());
-		System.out.println("S : "   + res.getStates());
-		System.out.println("S : "   + app.reach(res));
+
+		TransitionSystem<Pair<String, String>, String, String> res =  app.product(ts,aut);
+		VerificationResult<String> verified =  app.verifyAnOmegaRegularProperty(ts,aut);
+		System.out.println(verified);
+//		System.out.println("aut : "  + aut.getTransitions());
+//
+//		System.out.println("AP : "  + res.getAtomicPropositions());
+//		System.out.println("Act : " + res.getActions());
+//		System.out.println("I : "   + res.getInitialStates());
+//		System.out.println("S : "   + res.getStates());
+//		System.out.println("|->| : "   + res.getTransitions().size());
+//		System.out.println("-> : "   + res.getTransitions());
+//		for (TSTransition<Pair<String,String>,String> trans :res.getTransitions()) {
+//			System.out.println(trans.getFrom() + "    " +  res.getLabel(trans.getFrom()));
+//		}
+//		System.out.println("Reach : "   + app.reach(res));
 
 
 

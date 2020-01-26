@@ -384,14 +384,19 @@ public class FvmFacade {
 		public <S, A> Set<S> reach(TransitionSystem<S, A, ?> ts) {
 			Set<S> states_of_distance_i = new HashSet<>(ts.getInitialStates());
 			Set<S> res = new HashSet<>(ts.getInitialStates());
+			int i = 0;
 			while(!states_of_distance_i.isEmpty()){
+//				System.out.println("before " + i +  states_of_distance_i);
+				i++;
 				states_of_distance_i = post(ts,states_of_distance_i);
+//				System.out.println("middle " + i +  states_of_distance_i);
 				states_of_distance_i.removeAll(res);
 				res.addAll(states_of_distance_i);
-
+//				System.out.println("after " + i +  states_of_distance_i);
 			}
 			return res;
 		}
+
 
 		/**
 		 * Compute the synchronous product of two transition systems.
@@ -1319,7 +1324,7 @@ public class FvmFacade {
 				for (Saut state_aut_next : all_state_aut_next){
 					Pair<Sts, Saut> p = new Pair(state_ts,state_aut_next);
 					res.addInitialState(p);
-					res.addToLabel(p,state_aut);
+					res.addToLabel(p,state_aut_next);
 				}
 			}
 		}
@@ -1327,7 +1332,6 @@ public class FvmFacade {
 		Map<Saut, Map<Set<P>, Set<Saut>>> aut_transitions = aut.getTransitions();
 		for (TSTransition<Sts,A> transitions_ts : ts.getTransitions()){
 			Set<P> action_aut = ts.getLabel(transitions_ts.getTo());
-
 			for (Map.Entry<Saut,Map<Set<P>, Set<Saut>>> entry : aut_transitions.entrySet()) {
 				Saut q = entry.getKey();
 				Map<Set<P>, Set<Saut>> q_delta = entry.getValue();
@@ -1348,7 +1352,17 @@ public class FvmFacade {
 			}
 		}
 
+		Set<Pair<Sts, Saut>> reachable = reach(res);
+		Set<TSTransition<Pair<Sts,Saut>,A>> to_delete = new HashSet<>();
+		for(TSTransition<Pair<Sts,Saut>,A> ts_transition : res.getTransitions()){
+			if(!(reachable.contains( ts_transition.getFrom()) && reachable.contains( ts_transition.getTo()) )){
+				to_delete.add(ts_transition);
+			}
+		}
 
+		for (TSTransition<Pair<Sts,Saut>,A> t : to_delete) {
+			res.removeTransition(t);
+		}
 		return res;
 	}
 
@@ -1370,9 +1384,14 @@ public class FvmFacade {
 																			  Automaton<Saut, P> aut) {
 		TransitionSystem<Pair<S, Saut>, A, Saut> product_ts = product(ts,aut);
 		Set<Pair<S,Saut>> get_not_phi= get_not_phi_states(product_ts,aut.getAcceptingStates());
+		System.out.println("get_not_phi :" + get_not_phi);
 		for(Pair<S,Saut> s : get_not_phi){
 			List<Pair<S,Saut>> w = ReachFromInitialState(product_ts,s);
+//			System.out.println("W :" + w);
 			List<Pair<S,Saut>> v = ReachFrom(product_ts,s,s);
+
+//			System.out.println("V :" + v);
+
 			if(v != null && w != null && !v.isEmpty() && !w.isEmpty()){
 				List<S> prefix = new ArrayList<>();
 				List<S> cycle = new ArrayList<>();
@@ -1409,6 +1428,11 @@ public class FvmFacade {
 													Pair<S, Saut> to,
 													Stack<Pair<S, Saut>> path){
 		Set<Pair<S, Saut>> _post = post(product_ts,from);
+		List<Pair<S, Saut>> to_remove = new ArrayList<>(path);
+		to_remove.remove(to);
+		_post.removeAll(to_remove);
+		System.out.println("_post : " + _post);
+
 		for (Pair<S, Saut> p:_post) {
 			if(p.equals(to)){
 				path.push(to);
