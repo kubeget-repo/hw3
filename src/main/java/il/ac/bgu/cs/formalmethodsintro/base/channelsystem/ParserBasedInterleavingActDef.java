@@ -92,4 +92,45 @@ public class ParserBasedInterleavingActDef implements InterleavingActDef {
         }
 
     }
+
+
+    public boolean isOneSidedAction_read(String action) {
+        NanoPromelaLexer lexer = new NanoPromelaLexer(new ANTLRInputStream(action));
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        NanoPromelaParser parser = new NanoPromelaParser(tokens);
+
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(new ThrowingErrorListener());
+
+        parser.removeErrorListeners();
+        parser.addErrorListener(new ThrowingErrorListener());
+
+        try {
+            parser.onesided_read();
+            return parser.isMatchedEOF();
+        } catch (Exception e) {
+            return false;
+        }
+
+    }
+
+    public boolean isOneSidedAction_write(String action) {
+        NanoPromelaLexer lexer = new NanoPromelaLexer(new ANTLRInputStream(action));
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        NanoPromelaParser parser = new NanoPromelaParser(tokens);
+
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(new ThrowingErrorListener());
+
+        parser.removeErrorListeners();
+        parser.addErrorListener(new ThrowingErrorListener());
+
+        try {
+            parser.onesided_write();
+            return parser.isMatchedEOF();
+        } catch (Exception e) {
+            return false;
+        }
+
+    }
 }

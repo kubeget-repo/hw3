@@ -352,6 +352,61 @@ public class NanoPromelaParser extends Parser {
         }
     }
 
+    public final OnesidedContext onesided_read() throws RecognitionException {
+        OnesidedContext _localctx = new OnesidedContext(_ctx, getState());
+        enterRule(_localctx, 6, RULE_onesided);
+        try {
+            enterOuterAlt(_localctx, 1);
+            {
+                setState(56);
+                switch (getInterpreter().adaptivePredict(_input, 3, _ctx)) {
+                    case 1: {
+                        setState(54);
+                        hsreadstmt();
+                    }
+                    break;
+
+                }
+                setState(58);
+                match(EOF);
+            }
+        } catch (RecognitionException re) {
+            _localctx.exception = re;
+            _errHandler.reportError(this, re);
+            _errHandler.recover(this, re);
+        } finally {
+            exitRule();
+        }
+        return _localctx;
+    }
+
+    public final OnesidedContext onesided_write() throws RecognitionException {
+        OnesidedContext _localctx = new OnesidedContext(_ctx, getState());
+        enterRule(_localctx, 6, RULE_onesided);
+        try {
+            enterOuterAlt(_localctx, 1);
+            {
+                setState(56);
+                switch (getInterpreter().adaptivePredict(_input, 3, _ctx)) {
+                    case 2: {
+                        setState(55);
+                        hswritestmt();
+                    }
+                    break;
+                }
+                setState(58);
+                match(EOF);
+            }
+        } catch (RecognitionException re) {
+            _localctx.exception = re;
+            _errHandler.reportError(this, re);
+            _errHandler.recover(this, re);
+        } finally {
+            exitRule();
+        }
+        return _localctx;
+    }
+
     public final OnesidedContext onesided() throws RecognitionException {
         OnesidedContext _localctx = new OnesidedContext(_ctx, getState());
         enterRule(_localctx, 6, RULE_onesided);
