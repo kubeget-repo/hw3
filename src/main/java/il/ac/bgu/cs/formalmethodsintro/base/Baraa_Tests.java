@@ -1,6 +1,9 @@
 package il.ac.bgu.cs.formalmethodsintro.base;
 
 import il.ac.bgu.cs.formalmethodsintro.base.automata.Automaton;
+import il.ac.bgu.cs.formalmethodsintro.base.fairness.FairnessCondition;
+import il.ac.bgu.cs.formalmethodsintro.base.ltl.AP;
+import il.ac.bgu.cs.formalmethodsintro.base.ltl.LTL;
 import il.ac.bgu.cs.formalmethodsintro.base.transitionsystem.TSTransition;
 import il.ac.bgu.cs.formalmethodsintro.base.transitionsystem.TransitionSystem;
 
@@ -366,5 +369,55 @@ public class Baraa_Tests {
 
         return aut;
 
+    }
+    public static LTL<String> Baraa_get_LTL(){
+       FvmFacade app = new FvmFacade();
+        AP<String> a = new AP("a");
+        return app.always( app.eventualy(a));
+    }
+    public static TransitionSystem<String,String,String> Baraa_get_TS5(){
+        TransitionSystem<String,String,String> ts = new TransitionSystem<>();
+        String[] AP = {"a"};
+        String[] ACT = {"alpha","beta","omega"};
+
+        String alpha = "alpha";
+        String beta = "beta";
+        String omega = "omega";
+
+        String s1 = "s1";
+        String s2 = "s2";
+        String s3 = "s3";
+
+        ts.addInitialState(s1);
+        ts.addState(s2);
+        ts.addState(s3);
+        ts.addAllAtomicPropositions(AP);
+        ts.addAllActions(ACT);
+
+        ts.addToLabel(s3,AP[0]);
+
+        ts.addTransition(new TSTransition<>(s1,alpha,s3));
+        ts.addTransition(new TSTransition<>(s2,beta,s3));
+        ts.addTransition(new TSTransition<>(s2,omega,s1));
+        ts.addTransition(new TSTransition<>(s1,omega,s2));
+        ts.addTransition(new TSTransition<>(s3,beta,s3));
+
+        return ts;
+    }
+    public static FairnessCondition<String> Baraa_get_fc(){
+        FairnessCondition<String> fc = new FairnessCondition<String>(
+                new HashSet<>(Arrays.asList(
+//						new HashSet<>(Arrays.asList())
+//						new HashSet<>(Arrays.asList())
+                )),
+                new HashSet<>(Arrays.asList(
+//                      new HashSet<>(Arrays.asList()),
+//						new HashSet<>(Arrays.asList())
+                )),
+                new HashSet<>(Arrays.asList(
+//						new HashSet<>(Arrays.asList()),
+						new HashSet<>(Arrays.asList("alpha","beta"))
+                )));
+        return fc;
     }
     }

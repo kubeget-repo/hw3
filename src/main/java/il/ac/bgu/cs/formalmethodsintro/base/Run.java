@@ -10,6 +10,9 @@ import java.util.*;
 
 import il.ac.bgu.cs.formalmethodsintro.base.automata.MultiColorAutomaton;
 import il.ac.bgu.cs.formalmethodsintro.base.automata.Automaton;
+import il.ac.bgu.cs.formalmethodsintro.base.fairness.ComposedAtomicProposition;
+import il.ac.bgu.cs.formalmethodsintro.base.fairness.FairnessCondition;
+import il.ac.bgu.cs.formalmethodsintro.base.fairness.TriggeredAtomicProposotion;
 import il.ac.bgu.cs.formalmethodsintro.base.goal.AutomatonIO;
 import il.ac.bgu.cs.formalmethodsintro.base.ltl.AP;
 import il.ac.bgu.cs.formalmethodsintro.base.ltl.LTL;
@@ -34,45 +37,15 @@ public class Run {
 
 
 	public static void main(String[] args) {
-		//LTL_GNBA();
-		/*FvmFacade app = new FvmFacade();
-		var p = new AP<String>("p");
-		var q = new AP<String>("q");
-		var s = new AP<String>("s");
-		System.out.println(app.isConsistent(set(
-				LTL.not(p),
-				q,
-				LTL.not(s),
-				LTL.until(q, s),
-				LTL.until(p, LTL.until(q, s))
-								), 5*2));
-		System.out.print(set(
-				p,
-				q,
-				LTL.not(s),
-				LTL.not(LTL.until(q, s)),
-				LTL.until(p, LTL.until(q, s))));*/
+
 		FvmFacade app = new FvmFacade();
-		TransitionSystem<String,String,String> ts = Baraa_get_TS4_test();
+		TransitionSystem<String,String,String> ts = Baraa_get_TS5();
 		Automaton<String,String> aut = Baraa_get_aut4();
+		LTL<String> ltl = Baraa_get_LTL();
+		FairnessCondition<String> fc = Baraa_get_fc();
 
 
-		TransitionSystem<Pair<String, String>, String, String> res =  app.product(ts,aut);
-		VerificationResult<String> verified =  app.verifyAnOmegaRegularProperty(ts,aut);
-		System.out.println(verified);
-//		System.out.println("aut : "  + aut.getTransitions());
-//
-//		System.out.println("AP : "  + res.getAtomicPropositions());
-//		System.out.println("Act : " + res.getActions());
-//		System.out.println("I : "   + res.getInitialStates());
-//		System.out.println("S : "   + res.getStates());
-//		System.out.println("|->| : "   + res.getTransitions().size());
-//		System.out.println("-> : "   + res.getTransitions());
-//		for (TSTransition<Pair<String,String>,String> trans :res.getTransitions()) {
-//			System.out.println(trans.getFrom() + "    " +  res.getLabel(trans.getFrom()));
-//		}
-//		System.out.println("Reach : "   + app.reach(res));
-
+		System.out.println(app.verifyFairLTLFormula(ts,fc,ltl));
 
 
 

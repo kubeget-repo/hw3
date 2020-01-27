@@ -10,6 +10,7 @@ import il.ac.bgu.cs.formalmethodsintro.base.channelsystem.InterleavingActDef;
 import il.ac.bgu.cs.formalmethodsintro.base.channelsystem.ParserBasedInterleavingActDef;
 import il.ac.bgu.cs.formalmethodsintro.base.circuits.Circuit;
 import il.ac.bgu.cs.formalmethodsintro.base.exceptions.StateNotFoundException;
+import il.ac.bgu.cs.formalmethodsintro.base.fairness.*;
 import il.ac.bgu.cs.formalmethodsintro.base.ltl.*;
 import il.ac.bgu.cs.formalmethodsintro.base.nanopromela.NanoPromelaFileReader;
 import il.ac.bgu.cs.formalmethodsintro.base.nanopromela.NanoPromelaParser;
@@ -1384,7 +1385,7 @@ public class FvmFacade {
 																			  Automaton<Saut, P> aut) {
 		TransitionSystem<Pair<S, Saut>, A, Saut> product_ts = product(ts,aut);
 		Set<Pair<S,Saut>> get_not_phi= get_not_phi_states(product_ts,aut.getAcceptingStates());
-		System.out.println("get_not_phi :" + get_not_phi);
+//		System.out.println("get_not_phi :" + get_not_phi);
 		for(Pair<S,Saut> s : get_not_phi){
 			List<Pair<S,Saut>> w = ReachFromInitialState(product_ts,s);
 //			System.out.println("W :" + w);
@@ -1844,4 +1845,261 @@ public class FvmFacade {
 
 		return GNBA2NBA(gnba);
 	}
+
+
+
+	/**
+	 * Verify that a system satisfies an LTL formula under fairness conditions.
+	 * @param ts Transition system
+	 * @param fc Fairness condition
+	 * @param ltl An LTL formula
+	 * @param <S>  Type of states in the transition system
+	 * @param <A> Type of actions in the transition system
+	 * @param <P> Type of atomic propositions in the transition system
+	 * @return a VerificationSucceeded object or a VerificationFailed object with a counterexample.
+	 */
+	public <S, A, P> VerificationResult<S> verifyFairLTLFormula(TransitionSystem<S, A, P> ts, FairnessCondition<A> fc, LTL<P> ltl){
+		TransitionSystem<Pair<S,A>, A, ComposedAtomicProposition<P,A>> TSf = build_TSf(ts);
+
+
+		System.out.println("TSf :" + TSf);
+		LTL<ComposedAtomicProposition<P,A>> ltlf = build_LTLf(fc);
+		LTL<ComposedAtomicProposition<P,A>> final_ltl = LTL.and(ltlf,LTL.not(Convert(ltl)));//A->B = -AUB = -(A^-B) ,we want -(a->b) = (A^-B)
+		final_ltl = Optimize(final_ltl);
+		System.out.println("final_ltl :" + final_ltl);
+		Automaton<?, ComposedAtomicProposition<P,A>> automata = LTL2NBA(final_ltl);
+		System.out.println("automata :" + automata);
+
+		VerificationResult<Pair<S,A>> res = verifyAnOmegaRegularProperty(TSf,automata);
+		if(res instanceof VerificationSucceeded){
+			return new VerificationSucceeded<S>();
+		}else if(res instanceof VerificationFailed){
+			VerificationFailed<S> res2 = new VerificationFailed<>();
+			List<S> prefix = new ArrayList<>();
+			List<S> cycle = new ArrayList<>();
+			for(Pair<S,A> state : ((VerificationFailed<Pair<S,A>>) res).getPrefix()){
+				prefix.add(state.getFirst());
+			}
+			for(Pair<S,A> state : ((VerificationFailed<Pair<S,A>>) res).getCycle()){
+				cycle.add(state.getFirst());
+			}
+			res2.setCycle(cycle);
+			res2.setCycle(prefix);
+			return res2;
+
+		}else {
+			return null;
+		}
+	}
+
+	private static <P, A> LTL<ComposedAtomicProposition<P,A>> build_LTLf(FairnessCondition<A> fc) {
+		LTL<ComposedAtomicProposition<P,A>> uncond_ltl = new TRUE();
+		LTL<ComposedAtomicProposition<P,A>> strong_ltl = new TRUE();
+		LTL<ComposedAtomicProposition<P,A>> weak_ltl = new TRUE();
+
+
+
+
+		for (Set<A> action_set:fc.getUnconditional()) {
+			List<LTL<ComposedAtomicProposition<P,A>>> triggered = new ArrayList<>();
+			for(A action : action_set){
+				triggered.add(new AP<ComposedAtomicProposition<P,A>>(new TriggeredAtomicProposotion<>(action)));
+			}
+			uncond_ltl = LTL.and(uncond_ltl,always(eventualy(Or(triggered))));
+		}
+
+
+		for (Set<A> action_set:fc.getStrong()) {
+			List<LTL<ComposedAtomicProposition<P,A>>> enabled = new ArrayList<>();
+			for(A action : action_set){
+				enabled.add(new AP<ComposedAtomicProposition<P,A>>(new EnabledAtomicProposition<>(action)));
+			}
+
+			List<LTL<ComposedAtomicProposition<P,A>>> triggered = new ArrayList<>();
+			for(A action : action_set){
+				triggered.add(new AP<ComposedAtomicProposition<P,A>>(new TriggeredAtomicProposotion<>(action)));
+			}
+			LTL<ComposedAtomicProposition<P,A>> always_eventually_first = always(eventualy(Or(enabled)));
+//			LTL<ComposedAtomicProposition<P,A>> not_always_eventually = LTL.not(always_eventually_first);
+
+			LTL<ComposedAtomicProposition<P,A>> always_eventually_second = always(eventualy(Or(triggered)));
+			LTL<ComposedAtomicProposition<P,A>> not_always_eventually = LTL.not(always_eventually_second);
+
+			strong_ltl = LTL.and(strong_ltl,LTL.and(always_eventually_first,not_always_eventually));
+		}
+
+
+		for (Set<A> action_set:fc.getWeak()) {
+			List<LTL<ComposedAtomicProposition<P,A>>> enabled = new ArrayList<>();
+			for(A action : action_set){
+				enabled.add(new AP<ComposedAtomicProposition<P,A>>(new EnabledAtomicProposition<>(action)));
+			}
+
+			List<LTL<ComposedAtomicProposition<P,A>>> triggered = new ArrayList<>();
+			for(A action : action_set){
+				triggered.add(new AP<ComposedAtomicProposition<P,A>>(new TriggeredAtomicProposotion<>(action)));
+			}
+			LTL<ComposedAtomicProposition<P,A>> always_eventually_first = eventualy(always(Or(enabled)));
+//			LTL<ComposedAtomicProposition<P,A>> not_always_eventually = LTL.not(always_eventually_first);
+
+			LTL<ComposedAtomicProposition<P,A>> always_eventually_second = always(eventualy(Or(triggered)));
+			LTL<ComposedAtomicProposition<P,A>> not_always_eventually = LTL.not(always_eventually_second);
+
+			weak_ltl = LTL.and(weak_ltl,LTL.and(always_eventually_first,not_always_eventually));
+		}
+
+
+
+		return Optimize(LTL.and(uncond_ltl,LTL.and(strong_ltl,weak_ltl)));
+	}
+
+
+	private  static <X> LTL<X> Optimize(LTL<X> ltl){
+		if(ltl instanceof And){
+			And ltl_and = (And)ltl;
+			if (ltl_and.getLeft() instanceof TRUE){
+				return Optimize(ltl_and.getRight());
+			} else if (ltl_and.getRight() instanceof TRUE){
+				return Optimize(ltl_and.getLeft());
+			} else {
+				return LTL.and(Optimize(ltl_and.getLeft()),Optimize(ltl_and.getRight()));
+			}
+
+		} else if (ltl instanceof Until){
+			Until ltl_until = (Until)ltl;
+			if(ltl_until.getRight() instanceof TRUE){
+				return new TRUE();
+			} else {
+				return LTL.until(Optimize(ltl_until.getLeft()),Optimize(ltl_until.getRight()));
+			}
+
+		} else if (ltl instanceof Not){
+			Not ltl_until = (Not)ltl;
+			if(ltl_until.getInner() instanceof Not){
+				return  ((Not) ltl_until.getInner()).getInner();
+			} else {
+				return LTL.not(Optimize(ltl_until.getInner()));
+			}
+
+		} else if (ltl instanceof Next){
+			return LTL.next(Optimize(((Next)ltl).getInner()));
+		} else if (ltl instanceof AP){
+			return ltl;
+		} else {
+			return ltl;
+		}
+
+	}
+	private  static <X,A> LTL<ComposedAtomicProposition<X,A>> Convert(LTL<X> ltl){
+		if(ltl instanceof And){
+			And ltl_and = (And)ltl;
+			return LTL.and(Convert(ltl_and.getLeft()),Convert(ltl_and.getRight()));
+		} else if (ltl instanceof Until){
+			Until ltl_until = (Until)ltl;
+			return LTL.until(Convert(ltl_until.getLeft()),Convert(ltl_until.getRight()));
+		} else if (ltl instanceof Not){
+			Not ltl_not = (Not)ltl;
+			return LTL.not(Convert(ltl_not.getInner()));
+		} else if (ltl instanceof Next){
+			return LTL.next(Convert(((Next)ltl).getInner()));
+		} else if (ltl instanceof AP){
+			return new AP(new OriginalAtomicProposition<>(((AP)ltl).getName()));
+		} else if (ltl instanceof TRUE){
+			return new TRUE();
+		} else {
+			throw new IllegalArgumentException("Unknown type : ("+ltl+")");
+		}
+	}
+
+	public  static <X> LTL<X> eventualy(LTL<X> ltl){
+		return LTL.until(new TRUE(),ltl);
+	}
+
+	public  static <X> LTL<X> always(LTL<X> ltl){
+		return LTL.not(eventualy(LTL.not(ltl)));
+	}
+
+	private  static <X> LTL<X> Or(List<LTL<X>> ltls){
+		List<LTL<X>> list = new ArrayList<>();
+		for(LTL<X> ltl:ltls){
+			list.add(LTL.not(ltl));
+		}
+		return LTL.not(And(list));
+	}
+
+	private  static <X> LTL<X> And(List<LTL<X>> ltls){
+		if(ltls.isEmpty()){
+			return new TRUE<>();
+		}
+		LTL<X> acc = ltls.get(0);
+		for(int i = 1; i < ltls.size(); i++){
+			acc = LTL.and(acc,ltls.get(i));
+		}
+		return acc;
+	}
+
+	public <S, A, P>  TransitionSystem<Pair<S,A>, A, ComposedAtomicProposition<P,A>> build_TSf(TransitionSystem<S, A, P> ts){
+		TransitionSystem<Pair<S,A>, A, ComposedAtomicProposition<P,A>> res = new TransitionSystem<>();
+
+		//S
+		for(S state:ts.getStates()){
+			for(A action : ts.getActions()){
+				res.addState(new Pair(state,action));
+			}
+		}
+
+		//Act
+		res.addAllActions(ts.getActions());
+
+		//I
+		for(S state:ts.getInitialStates()){
+			for(A action : ts.getActions()){
+				res.addInitialState(new Pair(state,action));
+			}
+		}
+
+		//AP
+		for(P atomic : ts.getAtomicPropositions()) {
+			res.addAtomicProposition(new OriginalAtomicProposition<>(atomic));
+		}
+		for(A action : ts.getActions()){
+			res.addAtomicProposition(new TriggeredAtomicProposotion<>(action));
+			res.addAtomicProposition(new EnabledAtomicProposition<>(action));
+
+		}
+
+		//->
+		for(TSTransition<S,A> transition : ts.getTransitions()){
+
+			Pair<S,A> new_to = new Pair(transition.getTo(),transition.getAction());
+			for(A action : ts.getActions()){
+				Pair<S,A> new_from = new Pair(transition.getFrom(),action);
+				TSTransition<Pair<S,A>,A> new_transition = new TSTransition<>(new_from,transition.getAction(),new_to);
+				res.addTransition(new_transition);
+			}
+
+		}
+
+		//L
+		for(Pair<S,A> state : res.getStates()){
+
+			//original
+			for(P atomic : ts.getLabel(state.getFirst())){
+				res.addToLabel(state,new OriginalAtomicProposition<P,A>(atomic));
+			}
+
+			//triggered
+			res.addToLabel(state,new TriggeredAtomicProposotion<P,A>(state.getSecond()));
+
+			//enabled
+			for(A action : ts.getActions()){
+				if(!post(ts,state.getFirst(),action).isEmpty()){
+					res.addToLabel(state,new EnabledAtomicProposition<P,A>(action));
+				}
+			}
+		}
+		return res;
+	}
 }
+
+
