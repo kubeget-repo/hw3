@@ -1847,7 +1847,6 @@ public class FvmFacade {
 	}
 
 
-
 	/**
 	 * Verify that a system satisfies an LTL formula under fairness conditions.
 	 * @param ts Transition system
@@ -1867,6 +1866,10 @@ public class FvmFacade {
 		LTL<ComposedAtomicProposition<P,A>> final_ltl = LTL.and(ltlf,LTL.not(Convert(ltl)));//A->B = -AUB = -(A^-B) ,we want -(a->b) = (A^-B)
 		final_ltl = Optimize(final_ltl);
 		System.out.println("final_ltl :" + final_ltl);
+
+		if(true){
+			return null;
+		}
 		Automaton<?, ComposedAtomicProposition<P,A>> automata = LTL2NBA(final_ltl);
 		System.out.println("automata :" + automata);
 

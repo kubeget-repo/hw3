@@ -2,6 +2,7 @@ package il.ac.bgu.cs.formalmethodsintro.base;
 
 
 import static il.ac.bgu.cs.formalmethodsintro.base.Baraa_Tests.*;
+
 import static il.ac.bgu.cs.formalmethodsintro.base.util.CollectionHelper.product;
 import static il.ac.bgu.cs.formalmethodsintro.base.util.CollectionHelper.set;
 
@@ -16,6 +17,7 @@ import il.ac.bgu.cs.formalmethodsintro.base.fairness.TriggeredAtomicProposotion;
 import il.ac.bgu.cs.formalmethodsintro.base.goal.AutomatonIO;
 import il.ac.bgu.cs.formalmethodsintro.base.ltl.AP;
 import il.ac.bgu.cs.formalmethodsintro.base.ltl.LTL;
+import il.ac.bgu.cs.formalmethodsintro.base.ltl.LTL2GNBA_tools;
 import il.ac.bgu.cs.formalmethodsintro.base.ltl.Until;
 import il.ac.bgu.cs.formalmethodsintro.base.transitionsystem.TSTransition;
 import il.ac.bgu.cs.formalmethodsintro.base.transitionsystem.TransitionSystem;
@@ -38,14 +40,21 @@ public class Run {
 
 	public static void main(String[] args) {
 
-		FvmFacade app = new FvmFacade();
-		TransitionSystem<String,String,String> ts = Baraa_get_TS5();
-		Automaton<String,String> aut = Baraa_get_aut4();
-		LTL<String> ltl = Baraa_get_LTL();
-		FairnessCondition<String> fc = Baraa_get_fc();
+//		FvmFacade app = new FvmFacade();
+//		TransitionSystem<String,String,String> ts = Baraa_get_TS5();
+//		Automaton<String,String> aut = Baraa_get_aut4();
+//		LTL<String> ltl = Baraa_get_LTL();
+//		FairnessCondition<String> fc = Baraa_get_fc();
+		LTL<String> a = new AP("a");
+		LTL<String> b = new AP("b");
+		LTL<String> c = new AP("c");
 
+		Set<Set<LTL<String>>> s = LTL2GNBA_tools.get_states(LTL.until(a,LTL.until(b,c)));
+		System.out.println(s);
 
-		System.out.println(app.verifyFairLTLFormula(ts,fc,ltl));
+//		System.out.println(ltl);
+//		System.out.println("size is : " +s );
+//		System.out.println(app.verifyFairLTLFormula(ts,fc,ltl));
 
 
 
