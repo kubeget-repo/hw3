@@ -14,6 +14,7 @@ import il.ac.bgu.cs.formalmethodsintro.base.FvmFacade;
 import il.ac.bgu.cs.formalmethodsintro.base.automata.Automaton;
 import il.ac.bgu.cs.formalmethodsintro.base.ltl.AP;
 import il.ac.bgu.cs.formalmethodsintro.base.ltl.LTL;
+import il.ac.bgu.cs.formalmethodsintro.base.util.GraphvizPainter;
 import il.ac.bgu.cs.formalmethodsintro.base.util.Pair;
 
 public class LTLTest {
@@ -29,9 +30,11 @@ public class LTLTest {
 		Automaton<?, String> aut = fvmFacadeImpl.LTL2NBA(ltl);
 
 	 
-		System.out.println(aut.getAcceptingStates());
-		System.out.println(expected().getAcceptingStates());
-		System.out.println(aut.equals(expected()));
+		//System.out.println(GraphvizPainter.toStringPainter().makeDotCode(aut));
+		
+		//System.out.println(GraphvizPainter.toStringPainter().makeDotCode(expected()));
+		
+		
 		
 		assertEquals(aut, expected());
 	}

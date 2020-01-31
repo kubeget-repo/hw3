@@ -30,7 +30,7 @@ public class GNBACritSectionTest {
 		
 		Util.printAutomatonTransitions(getExpected());
 		
-		//assertEquals(getExpected(), aut);
+		assertEquals(getExpected(), aut);
 
 	}
 

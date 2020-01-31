@@ -40,6 +40,9 @@ public class Run {
 
 	public static void main(String[] args) {
 		LTL_GNBA();
+		
+		
+		
 //		FvmFacade app = new FvmFacade();
 //		TransitionSystem<String,String,String> ts = Baraa_get_TS5();
 //		Automaton<String,String> aut = Baraa_get_aut4();
@@ -79,7 +82,7 @@ public class Run {
 		/******quiz 4 ********* p U (q U s)  ***/
 		var ltl_7 = LTL.until(p, LTL.until(q, s));
 		
-		Automaton<?, String> nba = app.LTL2NBA(ltl_6);
+		Automaton<?, String> nba = app.LTL2NBA(ltl_5);
 		
 	
 //		System.out.println("\n\n/***** Transitions *****/\n");
