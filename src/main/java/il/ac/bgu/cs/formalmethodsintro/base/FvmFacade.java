@@ -1710,7 +1710,7 @@ public class FvmFacade {
 				if (AP.contains(p) == false)
 					AP.add((AP<L>) p);
 		}
-
+/*
 		Set<Set<LTL<L>>> pow_subs = Util.powerSet(subs);
 
 		Set<Set<LTL<L>>> states = new HashSet<Set<LTL<L>>>();
@@ -1718,7 +1718,10 @@ public class FvmFacade {
 			if (isConsistent(sub, subs.size()))
 				states.add(sub);
 		}
-
+*/
+		
+		var states=LTL2GNBA_tools.get_states(ltl);
+		
 		return new Pair<>(states, AP);
 
 	}

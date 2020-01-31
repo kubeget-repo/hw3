@@ -39,18 +39,18 @@ public class Run {
 
 
 	public static void main(String[] args) {
-
+		LTL_GNBA();
 //		FvmFacade app = new FvmFacade();
 //		TransitionSystem<String,String,String> ts = Baraa_get_TS5();
 //		Automaton<String,String> aut = Baraa_get_aut4();
 //		LTL<String> ltl = Baraa_get_LTL();
 //		FairnessCondition<String> fc = Baraa_get_fc();
-		LTL<String> a = new AP("a");
+		/*LTL<String> a = new AP("a");
 		LTL<String> b = new AP("b");
 		LTL<String> c = new AP("c");
 
 		Set<Set<LTL<String>>> s = LTL2GNBA_tools.get_states(LTL.until(a,LTL.until(b,c)));
-		System.out.println(s);
+		System.out.println(s);*/
 
 //		System.out.println(ltl);
 //		System.out.println("size is : " +s );
