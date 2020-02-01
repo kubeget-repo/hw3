@@ -49,6 +49,7 @@ public class Run {
 
 
 
+
 	}
 
 	public static void LTL_GNBA() {
@@ -70,7 +71,7 @@ public class Run {
 		/******quiz 4 ********* p U (q U s)  ***/
 		var ltl_7 = LTL.until(p, LTL.until(q, s));
 		
-		Automaton<?, String> nba = app.LTL2NBA(ltl_6);
+		Automaton<?, String> nba = app.LTL2NBA(ltl_5);
 		
 	
 //		System.out.println("\n\n/***** Transitions *****/\n");
@@ -159,15 +160,17 @@ public class Run {
 		gnba.addTransition(States.s1, new HashSet<>(Arrays.asList("A")), States.s0);
 
 		gnba.setAccepting(States.s0, colors.red.ordinal());
-		// gnba.setAccepting(States.s1,colors.blue.ordinal());
+	    gnba.setAccepting(States.s1,colors.blue.ordinal());
 
 		gnba.setInitial(States.s0);
 
 		nba = (Automaton<States, String>) app.GNBA2NBA(gnba);
 
-		System.out.println(nba.getTransitions());
+		/*System.out.println(nba.getTransitions());
 		System.out.println(nba.getInitialStates());
-		System.out.println(nba.getAcceptingStates());
+		System.out.println(nba.getAcceptingStates());*/
+		
+		//System.out.println(GraphvizPainter.toStringPainter().makeDotCode(nba));
 	}
 
 }

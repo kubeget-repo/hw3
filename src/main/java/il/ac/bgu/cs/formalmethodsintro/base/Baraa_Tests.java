@@ -417,8 +417,7 @@ public class Baraa_Tests {
                 )),
                 new HashSet<>(Arrays.asList(
 //						new HashSet<>(Arrays.asList()),
-                        new HashSet<>(Arrays.asList("beta")),
-						new HashSet<>(Arrays.asList("alpha"))
+                        new HashSet<>(Arrays.asList("beta","beta"))
                 )));
         return fc;
     }
