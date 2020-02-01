@@ -1694,13 +1694,13 @@ public class FvmFacade {
 					AP.add((AP<L>) p);
 		}
 		
-		  Set<Set<LTL<L>>> pow_subs = Util.powerSet(subs);
+		/*  Set<Set<LTL<L>>> pow_subs = Util.powerSet(subs);
 		  
 		  Set<Set<LTL<L>>> states = new HashSet<Set<LTL<L>>>(); for (var sub :
 		 pow_subs) { if (isConsistent(sub, subs.size())) states.add(sub); }
-		 
+		 */
 
-		//var states = LTL2GNBA_tools.get_states(ltl);
+		var states = LTL2GNBA_tools.get_states(ltl);
 
 		return new Pair<>(states, AP);
 
