@@ -378,11 +378,11 @@ public class Baraa_Tests {
     public static TransitionSystem<String,String,String> Baraa_get_TS5(){
         TransitionSystem<String,String,String> ts = new TransitionSystem<>();
         String[] AP = {"a"};
-        String[] ACT = {"alpha","beta","omega"};
+        String[] ACT = {"alpha","beta"};
 
         String alpha = "alpha";
         String beta = "beta";
-        String omega = "omega";
+
 
         String s1 = "s1";
         String s2 = "s2";
@@ -391,15 +391,16 @@ public class Baraa_Tests {
         ts.addInitialState(s1);
         ts.addState(s2);
         ts.addState(s3);
+
         ts.addAllAtomicPropositions(AP);
         ts.addAllActions(ACT);
 
-        ts.addToLabel(s3,AP[0]);
+//        ts.addToLabel(s2,AP[0]);
 
-        ts.addTransition(new TSTransition<>(s1,alpha,s3));
-        ts.addTransition(new TSTransition<>(s2,beta,s3));
-        ts.addTransition(new TSTransition<>(s2,omega,s1));
-        ts.addTransition(new TSTransition<>(s1,omega,s2));
+        ts.addTransition(new TSTransition<>(s1,alpha,s2));
+        ts.addTransition(new TSTransition<>(s2,alpha,s2));
+        ts.addTransition(new TSTransition<>(s1,beta,s1));
+        ts.addTransition(new TSTransition<>(s1,beta,s3));
         ts.addTransition(new TSTransition<>(s3,beta,s3));
 
         return ts;
@@ -416,7 +417,8 @@ public class Baraa_Tests {
                 )),
                 new HashSet<>(Arrays.asList(
 //						new HashSet<>(Arrays.asList()),
-						new HashSet<>(Arrays.asList("alpha","beta"))
+                        new HashSet<>(Arrays.asList("beta")),
+						new HashSet<>(Arrays.asList("alpha"))
                 )));
         return fc;
     }

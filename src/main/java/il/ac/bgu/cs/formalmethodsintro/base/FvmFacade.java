@@ -25,6 +25,8 @@ import il.ac.bgu.cs.formalmethodsintro.base.verification.VerificationResult;
 import il.ac.bgu.cs.formalmethodsintro.base.verification.VerificationSucceeded;
 import il.ac.bgu.cs.formalmethodsintro.base.wrapperclasses.ChannelSystemTransitionWrapper;
 
+import static il.ac.bgu.cs.formalmethodsintro.base.ltl.LTL2GNBA_tools.*;
+
 /**
  * Interface for the entry point class to the HW in this class. Our
  * client/testing code interfaces with the student solutions through this
@@ -1320,6 +1322,7 @@ public class FvmFacade {
 				Map<Saut, Map<Set<P>, Set<Saut>>> aut_transitions = aut.getTransitions();
 				Map<Set<P>, Set<Saut>> state_aut_delta = aut_transitions.get(state_aut);
 				if (state_aut_delta == null) continue;
+				var x = ts.getLabel(state_ts);
 				Set<Saut> all_state_aut_next = state_aut_delta.get(ts.getLabel(state_ts));
 				if (all_state_aut_next  == null) continue;
 				for (Saut state_aut_next : all_state_aut_next){
@@ -1364,6 +1367,12 @@ public class FvmFacade {
 		for (TSTransition<Pair<Sts,Saut>,A> t : to_delete) {
 			res.removeTransition(t);
 		}
+		Set<Pair<Sts, Saut>> all_states = new HashSet<>(res.getStates());
+		for(var a : all_states){
+			if(!reachable.contains(a)){
+				res.removeState(a);
+			}
+		}
 		return res;
 	}
 
@@ -1384,8 +1393,11 @@ public class FvmFacade {
 	public <S, A, P, Saut> VerificationResult<S> verifyAnOmegaRegularProperty(TransitionSystem<S, A, P> ts,
 																			  Automaton<Saut, P> aut) {
 		TransitionSystem<Pair<S, Saut>, A, Saut> product_ts = product(ts,aut);
+
 		Set<Pair<S,Saut>> get_not_phi= get_not_phi_states(product_ts,aut.getAcceptingStates());
-//		System.out.println("get_not_phi :" + get_not_phi);
+		System.out.println("get_not_phi :" + get_not_phi);
+		System.out.println("reach?? :" + product_ts.getStates().size() + " XXX " + reach(product_ts).size() );
+
 		for(Pair<S,Saut> s : get_not_phi){
 			List<Pair<S,Saut>> w = ReachFromInitialState(product_ts,s);
 //			System.out.println("W :" + w);
@@ -1432,8 +1444,6 @@ public class FvmFacade {
 		List<Pair<S, Saut>> to_remove = new ArrayList<>(path);
 		to_remove.remove(to);
 		_post.removeAll(to_remove);
-		System.out.println("_post : " + _post);
-
 		for (Pair<S, Saut> p:_post) {
 			if(p.equals(to)){
 				path.push(to);
@@ -1703,7 +1713,6 @@ public class FvmFacade {
 
 		var subs = new HashSet<LTL<L>>();
 		Subs(ltl, subs);
-
 		Set<AP<L>> AP = new HashSet<AP<L>>();
 		for (var p : subs) {
 			if (p instanceof AP)
@@ -1728,7 +1737,7 @@ public class FvmFacade {
 
 	public <L> Set<L> getAP(Set<LTL<L>> state, Set<AP<L>> AP) {
 		Set<L> c = new HashSet<>();
-		for (var e : AP) {
+		for (AP<L> e : AP) {
 			if (state.contains(e))
 				c.add(e.getName());
 
@@ -1765,7 +1774,7 @@ public class FvmFacade {
 				gnba.setInitial(src);
 
 			// Transitions
-			for (var ap : trans.getValue().entrySet())
+			for (Map.Entry<Set<L>, Set<Set<LTL<L>>>> ap : trans.getValue().entrySet())
 				for (var des : ap.getValue()) {
 					boolean isOK = true;
 					for (var e : src) {
@@ -1865,21 +1874,35 @@ public class FvmFacade {
 
 
 		System.out.println("TSf :" + TSf);
+		for(var s : TSf.getStates()){
+
+		System.out.println("L("+s+") = " + TSf.getLabel(s));
+		}
+
 		LTL<ComposedAtomicProposition<P,A>> ltlf = build_LTLf(fc);
 		LTL<ComposedAtomicProposition<P,A>> final_ltl = LTL.and(ltlf,LTL.not(Convert(ltl)));//A->B = -AUB = -(A^-B) ,we want -(a->b) = (A^-B)
-		final_ltl = Optimize(final_ltl);
+//		final_ltl = Optimize(final_ltl);
 		System.out.println("final_ltl :" + final_ltl);
 
-		if(true){
-			return null;
+		Set<LTL<ComposedAtomicProposition<P,A>>> not_used =  get_not_used_aps(TSf.getAtomicPropositions(),final_ltl);
+		if(not_used.size() > 0) {
+			LTL<ComposedAtomicProposition<P, A>> and = And(new ArrayList<>(not_used));
+			and = LTL.not(LTL.and(LTL.not(new TRUE<>()), LTL.not(and)));
+			final_ltl = LTL.and(final_ltl, and);
 		}
-		Automaton<?, ComposedAtomicProposition<P,A>> automata = LTL2NBA(final_ltl);
-		System.out.println("automata :" + automata);
+		//the past few lines are for adding (true | /\not_used_atomic_propositions)
+
+
+		Automaton<?, ComposedAtomicProposition<P,A>> automata = LTL2NBA(Optimize(final_ltl));
+		System.out.println("automata :" + automata.getInitialStates().size());
+		System.out.println(automata.getTransitions().keySet().size());
+
+
 
 		VerificationResult<Pair<S,A>> res = verifyAnOmegaRegularProperty(TSf,automata);
 		if(res instanceof VerificationSucceeded){
 			return new VerificationSucceeded<S>();
-		}else if(res instanceof VerificationFailed){
+		}else {
 			VerificationFailed<S> res2 = new VerificationFailed<>();
 			List<S> prefix = new ArrayList<>();
 			List<S> cycle = new ArrayList<>();
@@ -1890,15 +1913,13 @@ public class FvmFacade {
 				cycle.add(state.getFirst());
 			}
 			res2.setCycle(cycle);
-			res2.setCycle(prefix);
+			res2.setPrefix(prefix);
 			return res2;
 
-		}else {
-			return null;
 		}
 	}
 
-	private static <P, A> LTL<ComposedAtomicProposition<P,A>> build_LTLf(FairnessCondition<A> fc) {
+	public static <P, A> LTL<ComposedAtomicProposition<P,A>> build_LTLf(FairnessCondition<A> fc) {
 		LTL<ComposedAtomicProposition<P,A>> uncond_ltl = new TRUE();
 		LTL<ComposedAtomicProposition<P,A>> strong_ltl = new TRUE();
 		LTL<ComposedAtomicProposition<P,A>> weak_ltl = new TRUE();
@@ -1925,13 +1946,13 @@ public class FvmFacade {
 			for(A action : action_set){
 				triggered.add(new AP<ComposedAtomicProposition<P,A>>(new TriggeredAtomicProposotion<>(action)));
 			}
-			LTL<ComposedAtomicProposition<P,A>> always_eventually_first = always(eventualy(Or(enabled)));
-//			LTL<ComposedAtomicProposition<P,A>> not_always_eventually = LTL.not(always_eventually_first);
+			LTL<ComposedAtomicProposition<P,A>> the_cond = always(eventualy(Or(enabled)));
+			LTL<ComposedAtomicProposition<P,A>> not_the_cond = LTL.not(the_cond);
 
-			LTL<ComposedAtomicProposition<P,A>> always_eventually_second = always(eventualy(Or(triggered)));
-			LTL<ComposedAtomicProposition<P,A>> not_always_eventually = LTL.not(always_eventually_second);
+			LTL<ComposedAtomicProposition<P,A>> the_res = always(eventualy(Or(triggered)));
+			LTL<ComposedAtomicProposition<P,A>> not_the_res = LTL.not(the_res);
 
-			strong_ltl = LTL.and(strong_ltl,LTL.and(always_eventually_first,not_always_eventually));
+			strong_ltl = LTL.and(strong_ltl,LTL.not(LTL.and(the_cond,not_the_res)));
 		}
 
 
@@ -1945,18 +1966,19 @@ public class FvmFacade {
 			for(A action : action_set){
 				triggered.add(new AP<ComposedAtomicProposition<P,A>>(new TriggeredAtomicProposotion<>(action)));
 			}
-			LTL<ComposedAtomicProposition<P,A>> always_eventually_first = eventualy(always(Or(enabled)));
-//			LTL<ComposedAtomicProposition<P,A>> not_always_eventually = LTL.not(always_eventually_first);
+			LTL<ComposedAtomicProposition<P,A>> the_cond = eventualy(always(Or(enabled)));
+//			LTL<ComposedAtomicProposition<P,A>> not_the_cond = LTL.not(the_cond);
 
-			LTL<ComposedAtomicProposition<P,A>> always_eventually_second = always(eventualy(Or(triggered)));
-			LTL<ComposedAtomicProposition<P,A>> not_always_eventually = LTL.not(always_eventually_second);
+			LTL<ComposedAtomicProposition<P,A>> the_res = always(eventualy(Or(triggered)));
+			LTL<ComposedAtomicProposition<P,A>> not_the_res = LTL.not(the_res);
 
-			weak_ltl = LTL.and(weak_ltl,LTL.and(always_eventually_first,not_always_eventually));
+			//a->b  =>  -aUb   => -(a & -b)
+			weak_ltl = LTL.and(weak_ltl,LTL.not(LTL.and(the_cond,not_the_res)));
 		}
 
 
 
-		return Optimize(LTL.and(uncond_ltl,LTL.and(strong_ltl,weak_ltl)));
+		return LTL.and(uncond_ltl,LTL.and(strong_ltl,weak_ltl));
 	}
 
 
@@ -2104,6 +2126,26 @@ public class FvmFacade {
 				}
 			}
 		}
+
+		Set<Pair<S,A>> reachable = reach(res);
+		Set<Pair<S,A>> all_states = new HashSet<>(res.getStates());
+		Set<TSTransition<Pair<S,A>, A>> all_transitions = new HashSet(res.getTransitions());
+
+		for(var transition : all_transitions){
+			if(!reachable.contains(transition.getFrom()) || !reachable.contains(transition.getTo()) ){
+				res.removeTransition(transition);
+			}
+		}
+
+		for(Pair<S,A> state : all_states){
+			if(!reachable.contains(state)){
+				res.removeState(state);
+			}
+		}
+
+
+
+
 		return res;
 	}
 }

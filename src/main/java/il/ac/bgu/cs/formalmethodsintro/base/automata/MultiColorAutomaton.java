@@ -1,5 +1,7 @@
 package il.ac.bgu.cs.formalmethodsintro.base.automata;
 
+import il.ac.bgu.cs.formalmethodsintro.base.ltl.AP;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;

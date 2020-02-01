@@ -1,5 +1,6 @@
 package il.ac.bgu.cs.formalmethodsintro.base.ltl;
 
+import il.ac.bgu.cs.formalmethodsintro.base.fairness.ComposedAtomicProposition;
 import il.ac.bgu.cs.formalmethodsintro.base.util.Pair;
 import il.ac.bgu.cs.formalmethodsintro.base.util.Util;
 
@@ -72,7 +73,7 @@ public class LTL2GNBA_tools {
         }
         return x;
     }
-    private static <A> boolean my_contains(Set<Pair<Integer,A>> set, A element){
+    public static <A> boolean my_contains(Set<Pair<Integer, A>> set, A element){
         for(Pair<Integer,A> p : set){
             if(p.getSecond().equals(element)){
                 return true;
@@ -92,13 +93,25 @@ public class LTL2GNBA_tools {
         return res;
     }
 
+    public static <A> Set<LTL<A>> get_not_used_aps(Set<A> all_APs,LTL<A> final_ltl){
+        Set<LTL<A>> res = new HashSet<>();
+        Set<Pair<Integer,LTL<A>>> APs = get_APs(final_ltl);
+        for(A ap : all_APs){
+            LTL<A> ltl_ap = new AP(ap);
+            if(!my_contains(APs,ltl_ap)){
+                res.add(ltl_ap);
+            }
+        }
+        return res;
+
+    }
     public static <A> Set<Set<LTL<A>>> get_states(LTL<A> ltl){
         Set<Pair<Integer,LTL<A>>> APs = get_APs(ltl);
         Set<Pair<Integer,LTL<A>>> Ands = get_Ands(ltl);
         Set<Pair<Integer,LTL<A>>> Nexts = get_Nexts(ltl);
         Set<Pair<Integer,LTL<A>>> Untils = get_Untils(ltl);
         boolean there_is_true = contains_true(ltl);
-        int max_ands = max_depth(APs);
+        int max_ands = max_depth(Ands);
         int max_untils = max_depth(Untils);
 
         APs.addAll(Nexts);
@@ -126,7 +139,7 @@ public class LTL2GNBA_tools {
                     int level = p.getFirst();
                     LTL<A> and = p.getSecond();
                     if(i == level){
-                        if(my_contains(B,((And)and).getLeft()) && B.contains(((And)and).getRight())){
+                        if(my_contains(B,((And)and).getLeft()) && my_contains(B,((And)and).getRight())){
                             B.add(new Pair<>(-1,and));
                         } else {
                             B.add(new Pair<>(-2,LTL.not(and)));
