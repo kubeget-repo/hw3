@@ -45,9 +45,6 @@ public class Run {
 		TransitionSystem<String,String,String> ts = Baraa_get_TS5();
 		LTL<String> ltl = Baraa_get_LTL();
 		FairnessCondition<String> fc = Baraa_get_fc();
-
-		LTL<ComposedAtomicProposition<String,String>> ltlf = build_LTLf(fc);
-//		System.out.println(ltlf);
 		System.out.println(app.verifyFairLTLFormula(ts,fc,ltl));
 
 
