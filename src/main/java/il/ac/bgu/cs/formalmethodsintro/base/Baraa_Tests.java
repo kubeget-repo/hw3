@@ -373,7 +373,8 @@ public class Baraa_Tests {
     public static LTL<String> Baraa_get_LTL(){
        FvmFacade app = new FvmFacade();
         AP<String> a = new AP("a");
-        return app.always( app.eventualy(a));
+//        return app.always( app.eventualy(a));
+        return a;
     }
     public static TransitionSystem<String,String,String> Baraa_get_TS5(){
         TransitionSystem<String,String,String> ts = new TransitionSystem<>();
@@ -395,11 +396,11 @@ public class Baraa_Tests {
         ts.addAllAtomicPropositions(AP);
         ts.addAllActions(ACT);
 
-//        ts.addToLabel(s2,AP[0]);
+        ts.addToLabel(s2,AP[0]);
 
         ts.addTransition(new TSTransition<>(s1,alpha,s2));
         ts.addTransition(new TSTransition<>(s2,alpha,s2));
-        ts.addTransition(new TSTransition<>(s1,beta,s1));
+//        ts.addTransition(new TSTransition<>(s1,alpha,s1));
         ts.addTransition(new TSTransition<>(s1,beta,s3));
         ts.addTransition(new TSTransition<>(s3,beta,s3));
 
@@ -408,17 +409,17 @@ public class Baraa_Tests {
     public static FairnessCondition<String> Baraa_get_fc(){
         FairnessCondition<String> fc = new FairnessCondition<String>(
                 new HashSet<>(Arrays.asList(
-//						new HashSet<>(Arrays.asList())
-//						new HashSet<>(Arrays.asList())
+//						new HashSet<>(Arrays.asList("alpha"))
+
                 )),
                 new HashSet<>(Arrays.asList(
 //                      new HashSet<>(Arrays.asList()),
-//						new HashSet<>(Arrays.asList())
+                        new HashSet<>(Arrays.asList("alpha","beta"))
                 )),
                 new HashSet<>(Arrays.asList(
 //						new HashSet<>(Arrays.asList()),
-                        new HashSet<>(Arrays.asList("beta","beta"))
-                )));
+//                     new HashSet<>(Arrays.asList("alpha","beta"))
+                 )));
         return fc;
     }
     }

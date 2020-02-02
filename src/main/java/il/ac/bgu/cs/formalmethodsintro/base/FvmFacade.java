@@ -1373,9 +1373,8 @@ public class FvmFacade {
 																			  Automaton<Saut, P> aut) {
 		TransitionSystem<Pair<S, Saut>, A, Saut> product_ts = product(ts,aut);
 
-		Set<Pair<S,Saut>> get_not_phi= get_not_phi_states(product_ts,aut.getAcceptingStates());
+		Set<Pair<S,Saut>> get_not_phi = get_not_phi_states(product_ts,aut.getAcceptingStates());
 		System.out.println("get_not_phi :" + get_not_phi);
-		System.out.println("reach?? :" + product_ts.getStates().size() + " XXX " + reach(product_ts).size() );
 
 		for(Pair<S,Saut> s : get_not_phi){
 			List<Pair<S,Saut>> w = ReachFromInitialState(product_ts,s);
@@ -1409,6 +1408,8 @@ public class FvmFacade {
 	public <S, A, P, Saut> List<Pair<S, Saut>> ReachFromInitialState(
 			TransitionSystem<Pair<S, Saut>, A, Saut> product_ts, Pair<S, Saut> to) {
 		Set<Pair<S, Saut>> init = product_ts.getInitialStates();
+		if(init.contains(to))
+			return Arrays.asList(to);
 		List<Pair<S, Saut>> res;
 		for (Pair<S, Saut> i : init) {
 			res = ReachFrom(product_ts, i, to);
@@ -1836,19 +1837,12 @@ public class FvmFacade {
 	 */
 	public <S, A, P> VerificationResult<S> verifyFairLTLFormula(TransitionSystem<S, A, P> ts, FairnessCondition<A> fc,
 			LTL<P> ltl) {
+
 		TransitionSystem<Pair<S, A>, A, ComposedAtomicProposition<P, A>> TSf = build_TSf(ts);
-
-		System.out.println("TSf :" + TSf);
-
-		for(var s : TSf.getStates()){
-
-		System.out.println("L("+s+") = " + TSf.getLabel(s));
-		}
-
 		LTL<ComposedAtomicProposition<P,A>> ltlf = build_LTLf(fc);
-		LTL<ComposedAtomicProposition<P,A>> final_ltl = LTL.and(ltlf,LTL.not(Convert(ltl)));//A->B = -AUB = -(A^-B) ,we want -(a->b) = (A^-B)
-//		final_ltl = Optimize(final_ltl);
-		System.out.println("final_ltl :" + final_ltl);
+		LTL<ComposedAtomicProposition<P,A>> final_ltl = Optimize(LTL.and(ltlf,LTL.not(Convert(ltl))));//A->B = -AUB = -(A^-B) ,we want -(a->b) = (A^-B)
+//
+
 
 		Set<LTL<ComposedAtomicProposition<P,A>>> not_used =  get_not_used_aps(TSf.getAtomicPropositions(),final_ltl);
 		if(not_used.size() > 0) {
@@ -1859,19 +1853,13 @@ public class FvmFacade {
 		//the past few lines are for adding (true | /\not_used_atomic_propositions)
 
 
-		Automaton<?, ComposedAtomicProposition<P,A>> automata = LTL2NBA(Optimize(final_ltl));
-		System.out.println("automata :" + automata.getInitialStates().size());
-		System.out.println(automata.getTransitions().keySet().size());
-
-
-
+		Automaton<?, ComposedAtomicProposition<P,A>> automata = LTL2NBA(final_ltl);
 
 		VerificationResult<Pair<S, A>> res = verifyAnOmegaRegularProperty(TSf, automata);
+
 		if (res instanceof VerificationSucceeded) {
 			return new VerificationSucceeded<S>();
-
-		}else {
-
+		} else {
 			VerificationFailed<S> res2 = new VerificationFailed<>();
 			List<S> prefix = new ArrayList<>();
 			List<S> cycle = new ArrayList<>();
@@ -1954,28 +1942,37 @@ public class FvmFacade {
 	private static <X> LTL<X> Optimize(LTL<X> ltl) {
 		if (ltl instanceof And) {
 			And ltl_and = (And) ltl;
-			if (ltl_and.getLeft() instanceof TRUE) {
-				return Optimize(ltl_and.getRight());
-			} else if (ltl_and.getRight() instanceof TRUE) {
-				return Optimize(ltl_and.getLeft());
+
+			LTL<X> right = Optimize(ltl_and.getRight());
+			LTL<X> left = Optimize(ltl_and.getLeft());
+
+			if (right instanceof TRUE) {
+				return left;
+			} else if (left instanceof TRUE) {
+				return right;
 			} else {
-				return LTL.and(Optimize(ltl_and.getLeft()), Optimize(ltl_and.getRight()));
+				return LTL.and(left, right);
 			}
 
 		} else if (ltl instanceof Until) {
 			Until ltl_until = (Until) ltl;
-			if (ltl_until.getRight() instanceof TRUE) {
+
+			LTL<X> right = Optimize(ltl_until.getRight());
+			LTL<X> left = Optimize(ltl_until.getLeft());
+
+			if (right instanceof TRUE) {
 				return new TRUE();
 			} else {
-				return LTL.until(Optimize(ltl_until.getLeft()), Optimize(ltl_until.getRight()));
+				return LTL.until(left, right);
 			}
 
 		} else if (ltl instanceof Not) {
-			Not ltl_until = (Not) ltl;
-			if (ltl_until.getInner() instanceof Not) {
-				return ((Not) ltl_until.getInner()).getInner();
+			Not ltl_not = (Not) ltl;
+			LTL<X> ltl_not_inner = Optimize(ltl_not.getInner());
+			if (ltl_not_inner instanceof Not) {
+				return ((Not)ltl_not_inner).getInner();
 			} else {
-				return LTL.not(Optimize(ltl_until.getInner()));
+				return LTL.not(ltl_not_inner);
 			}
 
 		} else if (ltl instanceof Next) {
